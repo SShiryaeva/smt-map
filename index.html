@@ -1,157 +1,181 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<title>Карта партнёров СМТ</title>
+import webbrowser, os, json, urllib.request
+
+DATA = [
+    ("Ленинградская обл.",    "ГТК Групп (свои)",       "Андрей Частоколов +7 981 735-05-05", "#1f3a6b", 59.9, 30.3),
+    ("Псковская обл.",        "ГТК Групп (свои)",       "Андрей Частоколов +7 981 735-05-05", "#1f3a6b", 57.8, 28.3),
+    ("Вологодская обл.",      "ГТК Групп / Автограф",  "Андрей Частоколов +7 981 735-05-05", "#2b5ea7", 59.2, 39.9),
+    ("Архангельская обл.",    "ГТК Групп / Автограф",  "Андрей Частоколов +7 981 735-05-05", "#2b5ea7", 64.5, 40.5),
+    ("Московская обл.",       "СМТ / СКАУТ",           "Михаил Гуров +7 925 041-74-54",      "#ff7f0e", 55.8, 37.6),
+    ("Нижегородская обл.",    "СМТ / СКАУТ + Сантел НН","Михаил Гуров +7 925 041-74-54",      "#ff7f0e", 56.3, 44.0),
+    ("Оренбургская обл.",     "СМТ / СКАУТ",           "Михаил Гуров +7 925 041-74-54",      "#ff7f0e", 51.8, 55.1),
+    ("Омская обл.",           "ГТК Групп (подряд)",     "Андрей Частоколов",                  "#7fb3e8", 55.0, 73.4),
+    ("Забайкальский край",    "ГТК Групп (подряд)",     "Борис Анатольевич",                  "#7fb3e8", 52.0, 113.5),
+    ("Новосибирская обл.",    "ГТК + Цифра",           "Андрей Частоколов / Антон",          "#7fb3e8", 55.0, 82.9),
+    ("Краснодарский край",    "ГТК / Артур Алиев",     "Артур Алиев +7 918 949-28-08",       "#7fb3e8", 45.0, 39.0),
+    ("Ставропольский край",   "ГТК / Артур Алиев",     "Артур Алиев +7 918 949-28-08",       "#7fb3e8", 45.0, 42.0),
+    ("Брянская обл.",         "ГТК / Фёдор",           "Фёдор",                              "#7fb3e8", 53.2, 34.4),
+    ("Воронежская обл.",      "ГТК / Альтаир",         "Альтаир",                            "#7fb3e8", 51.7, 39.2),
+    ("Челябинская обл.",      "ГТК / Сергей",          "Сергей",                             "#7fb3e8", 55.2, 61.4),
+    ("Тюменская обл.",        "ГТК / Технология-Тюмень","Ирина Лапочкина +7 922 476-72-52",  "#7fb3e8", 57.2, 65.5),
+    ("Свердловская обл.",     "ГТК / Технология-Тюмень","Ирина Лапочкина +7 922 476-72-52",  "#7fb3e8", 56.8, 60.6),
+    ("Ямало-Ненецкий АО",     "ГТК / Иван",            "Иван (Салехард)",                    "#7fb3e8", 66.5, 67.0),
+    ("Пермский край",         "ГТК Групп (подряд)",     "Андрей Частоколов",                  "#7fb3e8", 58.0, 56.2),
+    ("Хабаровский край",      "ГТК Групп (подряд)",     "Андрей Частоколов",                  "#7fb3e8", 48.5, 135.1),
+    ("Башкортостан",          "ГТК / Альберт",         "Альберт +7 927 231-11-77",           "#7fb3e8", 54.7, 56.0),
+    ("Самарская обл.",        "ГТК / Альберт, Павел",  "Альберт / Шамиль / Павел",           "#7fb3e8", 53.2, 50.2),
+    ("Ульяновская обл.",      "ГТК / Павел",           "Павел",                              "#7fb3e8", 54.3, 48.4),
+    ("Кемеровская обл.",      "Авто-тренд (Игорь)",    "Игорь / Анастасия +7 905 910-99-94", "#2ca02c", 55.4, 86.1),
+    ("Республика Алтай",      "Авто-тренд (Игорь)",    "Игорь / Анастасия +7 905 910-99-94", "#2ca02c", 51.9, 86.0),
+    ("Иркутская обл.",        "Цифра (Антон)",         "Антон +7 913 534-03-34",             "#d62728", 52.3, 104.3),
+    ("Хакасия",               "Цифра (Антон)",         "Антон +7 913 534-03-34",             "#d62728", 53.7, 91.4),
+    ("Красноярский край",     "Цифра (Антон)",         "Антон +7 913 534-03-34",             "#d62728", 56.0, 93.0),
+    ("Смоленская обл.",       "FTNet.ru",              "Сергей Горбачев +7 920 333-03-13",   "#9467bd", 54.8, 32.0),
+    ("Тульская обл.",         "СМИК-Агро",             "СМИК-Агро",                          "#8c564b", 54.2, 37.6),
+    ("Орловская обл.",        "СМИК-Агро",             "СМИК-Агро",                          "#8c564b", 52.9, 36.1),
+    ("Липецкая обл.",         "СМИК-Агро",             "СМИК-Агро",                          "#8c564b", 52.6, 39.6),
+    ("ЛНР (Луганск)",         "СМТ / СКАУТ",           "Михаил Гуров +7 925 041-74-54",      "#ff7f0e", 48.5, 39.0),
+    ("Республика Беларусь",   "СисАвТран",             "Сергей Лелеш +375 29 237-13-77",     "#17becf", 53.7, 27.6),
+]
+
+# ====== Пробуем скачать GeoJSON ======
+print("Пробую скачать GeoJSON...")
+geojson = None
+URLS = [
+    "https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/russia.geojson",
+    "https://raw.githubusercontent.com/timurkanaz/Russia_geojson_OSM/master/geoBoundaries-RUS-ADM1.geojson",
+]
+for url in URLS:
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            geojson = json.loads(r.read().decode("utf-8"))
+        print(f"  OK: {url} ({len(geojson.get('features',[]))} объектов)")
+        break
+    except Exception as e:
+        print(f"  ERR: {url} -> {e}")
+
+# ====== Парсим GeoJSON ======
+# Ищем поле name (может быть "name", "NAME", "region", "shapeName" и т.д.)
+NAME_MAP = {n:n for n,_,_,_,_,_ in DATA}
+NAME_MAP["Ленинградская обл."] = "Ленинградская область"
+NAME_MAP["Псковская обл."]     = "Псковская область"
+NAME_MAP["Вологодская обл."]   = "Вологодская область"
+NAME_MAP["Архангельская обл."] = "Архангельская область"
+NAME_MAP["Московская обл."]    = "Московская область"
+NAME_MAP["Нижегородская обл."] = "Нижегородская область"
+NAME_MAP["Оренбургская обл."]  = "Оренбургская область"
+NAME_MAP["Омская обл."]        = "Омская область"
+NAME_MAP["Новосибирская обл."] = "Новосибирская область"
+NAME_MAP["Брянская обл."]      = "Брянская область"
+NAME_MAP["Воронежская обл."]   = "Воронежская область"
+NAME_MAP["Челябинская обл."]   = "Челябинская область"
+NAME_MAP["Тюменская обл."]     = "Тюменская область"
+NAME_MAP["Свердловская обл."]  = "Свердловская область"
+NAME_MAP["Ямало-Ненецкий АО"]  = "Ямало-Ненецкий автономный округ"
+NAME_MAP["Самарская обл."]     = "Самарская область"
+NAME_MAP["Ульяновская обл."]   = "Ульяновская область"
+NAME_MAP["Кемеровская обл."]   = "Кемеровская область"
+NAME_MAP["Иркутская обл."]     = "Иркутская область"
+NAME_MAP["Хакасия"]            = "Республика Хакасия"
+NAME_MAP["Смоленская обл."]    = "Смоленская область"
+NAME_MAP["Тульская обл."]      = "Тульская область"
+NAME_MAP["Орловская обл."]     = "Орловская область"
+NAME_MAP["Липецкая обл."]      = "Липецкая область"
+NAME_MAP["Башкортостан"]       = "Республика Башкортостан"
+
+found = {}
+if geojson:
+    for f in geojson.get("features", []):
+        p = f.get("properties", {})
+        g = f.get("geometry", {})
+        coords = g.get("coordinates", [])
+        if not coords:
+            continue
+        # Пробуем разные поля с именем
+        fname = p.get("name","") or p.get("NAME","") or p.get("region","") or p.get("shapeName","") or p.get("NAME_1","") or ""
+        for short, full in NAME_MAP.items():
+            if short in found:
+                continue
+            if fname and (short.lower() in fname.lower() or full.lower() in fname.lower() or fname.lower() in full.lower()):
+                found[short] = {"coords":coords, "type":g.get("type","Polygon")}
+                break
+    print(f"  Найдено регионов: {len(found)}")
+    for n,_,_,_,_,_ in DATA:
+        if n not in found and n not in ("ЛНР (Луганск)","Республика Беларусь"):
+            print(f"  НЕ НАЙДЕНО: {n}")
+
+# ====== Ручные границы для ЛНР и Беларуси ======
+BELARUS = [[55.80,23.17],[56.02,27.00],[55.91,28.00],[55.62,30.65],[55.44,30.80],[54.86,31.05],[54.30,30.50],[53.52,31.15],[52.74,31.80],[51.95,31.50],[51.50,30.50],[51.24,29.50],[51.35,27.20],[51.63,24.20],[52.26,23.18],[53.90,23.17],[55.80,23.17]]
+LNR     = [[50.18,38.05],[50.21,39.80],[50.06,40.33],[49.59,40.20],[49.16,40.06],[48.73,39.72],[48.24,39.50],[47.82,38.83],[47.82,38.20],[48.95,38.05],[50.18,38.05]]
+
+# ====== Строим выходные данные ======
+points = []
+seen = set()
+legend_items = []
+region_json = {}
+
+for name, partner, phone, color, lat, lon in DATA:
+    points.append({"name":name,"partner":partner,"phone":phone,"color":color,"lat":lat,"lon":lon})
+    if partner not in seen:
+        seen.add(partner)
+        legend_items.append('<div class="leg-it"><div class="leg-c" style="background:%s"></div>%s</div>' % (color, partner))
+
+    c = None
+    if name in found:
+        c = found[name]
+    elif name == "Республика Беларусь":
+        c = {"coords": [BELARUS], "type": "Polygon", "_native": True}
+    elif name == "ЛНР (Луганск)":
+        c = {"coords": [LNR], "type": "Polygon", "_native": True}
+
+    if c:
+        region_json[name] = {"coords":c["coords"], "type":c["type"], "color":color, "native": c.get("_native", False)}
+
+json_points  = json.dumps(points, ensure_ascii=False)
+json_regions = json.dumps(region_json, ensure_ascii=False)
+
+print(f"Регионов с границами: {len(region_json)}, точек: {len(points)}")
+
+HTML = r'''<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>Карта партнёров СМТ</title>
 <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
 <style>
-*{box-sizing:border-box}html,body{margin:0;padding:0;height:100%;font-family:Arial,sans-serif}
+html,body{margin:0;padding:0;height:100%;font-family:Arial,sans-serif}
 #map{width:100%;height:100vh}
-.legend{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.95);padding:12px 15px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.25);z-index:1000;max-height:90vh;overflow-y:auto;font-size:12px;line-height:1.5;min-width:180px}
+.legend{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.95);padding:12px 15px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.25);z-index:1000;max-height:90vh;overflow-y:auto;font-size:12px;line-height:1.4;min-width:180px}
 .legend h4{margin:0 0 8px 0;font-size:14px;color:#1a1a2e}
-.li{display:flex;align-items:center;margin:4px 0}
-.lc{width:12px;height:12px;border-radius:50%;margin-right:8px;flex-shrink:0}
-</style>
-</head>
-<body>
+.leg-it{display:flex;align-items:center;margin:4px 0}
+.leg-c{width:12px;height:12px;border-radius:50%;margin-right:8px;flex-shrink:0}
+</style></head><body>
 <div id="map"></div>
-<div class="legend" id="legend"><h4>Партнёры СМТ</h4></div>
+<div class="legend"><h4>Партнёры СМТ</h4>''' + ''.join(legend_items) + '''</div>
 <script>
 ymaps.ready(function(){
+var myMap=new ymaps.Map("map",{center:[62,85],zoom:2.6,controls:['zoomControl','typeSelector','rulerControl','fullscreenControl']});
+var rd=''' + json_regions + ''';
 
-var DATA=[
-["Ленинградская обл.","ГТК Групп (свои)","Андрей Частоколов +7 981 735-05-05","#1f3a6b",59.9,30.3],
-["Псковская обл.","ГТК Групп (свои)","Андрей Частоколов +7 981 735-05-05","#1f3a6b",57.8,28.3],
-["Вологодская обл.","ГТК Групп / Автограф","Андрей Частоколов +7 981 735-05-05","#2b5ea7",59.2,39.9],
-["Архангельская обл.","ГТК Групп / Автограф","Андрей Частоколов +7 981 735-05-05","#2b5ea7",64.5,40.5],
-["Московская обл.","СМТ / СКАУТ","Михаил Гуров +7 925 041-74-54","#ff7f0e",55.8,37.6],
-["Нижегородская обл.","СМТ / СКАУТ + Сантел НН","Михаил Гуров +7 925 041-74-54","#ff7f0e",56.3,44.0],
-["Оренбургская обл.","СМТ / СКАУТ","Михаил Гуров +7 925 041-74-54","#ff7f0e",51.8,55.1],
-["Омская обл.","ГТК Групп (подряд)","Андрей Частоколов","#7fb3e8",55.0,73.4],
-["Забайкальский край","ГТК Групп (подряд)","Борис Анатольевич","#7fb3e8",52.0,113.5],
-["Новосибирская обл.","ГТК + Цифра","Андрей Частоколов / Антон","#7fb3e8",55.0,82.9],
-["Краснодарский край","ГТК / Артур Алиев","Артур Алиев +7 918 949-28-08","#7fb3e8",45.0,39.0],
-["Ставропольский край","ГТК / Артур Алиев","Артур Алиев +7 918 949-28-08","#7fb3e8",45.0,42.0],
-["Брянская обл.","ГТК / Фёдор","Фёдор","#7fb3e8",53.2,34.4],
-["Воронежская обл.","ГТК / Альтаир","Альтаир","#7fb3e8",51.7,39.2],
-["Челябинская обл.","ГТК / Сергей","Сергей","#7fb3e8",55.2,61.4],
-["Тюменская обл.","ГТК / Технология-Тюмень","Ирина Лапочкина +7 922 476-72-52","#7fb3e8",57.2,65.5],
-["Свердловская обл.","ГТК / Технология-Тюмень","Ирина Лапочкина +7 922 476-72-52","#7fb3e8",56.8,60.6],
-["Ямало-Ненецкий АО","ГТК / Иван","Иван (Салехард)","#7fb3e8",66.5,67.0],
-["Пермский край","ГТК Групп (подряд)","Андрей Частоколов","#7fb3e8",58.0,56.2],
-["Хабаровский край","ГТК Групп (подряд)","Андрей Частоколов","#7fb3e8",48.5,135.1],
-["Башкортостан","ГТК / Альберт","Альберт +7 927 231-11-77","#7fb3e8",54.7,56.0],
-["Самарская обл.","ГТК / Альберт, Павел","Альберт / Шамиль / Павел","#7fb3e8",53.2,50.2],
-["Ульяновская обл.","ГТК / Павел","Павел","#7fb3e8",54.3,48.4],
-["Кемеровская обл.","Авто-тренд (Игорь)","Игорь / Анастасия +7 905 910-99-94","#2ca02c",55.4,86.1],
-["Республика Алтай","Авто-тренд (Игорь)","Игорь / Анастасия +7 905 910-99-94","#2ca02c",51.9,86.0],
-["Иркутская обл.","Цифра (Антон)","Антон +7 913 534-03-34","#d62728",52.3,104.3],
-["Хакасия","Цифра (Антон)","Антон +7 913 534-03-34","#d62728",53.7,91.4],
-["Красноярский край","Цифра (Антон)","Антон +7 913 534-03-34","#d62728",56.0,93.0],
-["Смоленская обл.","FTNet.ru","Сергей Горбачев +7 920 333-03-13","#9467bd",54.8,32.0],
-["Тульская обл.","СМИК-Агро","СМИК-Агро","#8c564b",54.2,37.6],
-["Орловская обл.","СМИК-Агро","СМИК-Агро","#8c564b",52.9,36.1],
-["Липецкая обл.","СМИК-Агро","СМИК-Агро","#8c564b",52.6,39.6],
-["ЛНР (Луганск)","СМТ / СКАУТ","Михаил Гуров +7 925 041-74-54","#ff7f0e",48.5,39.0],
-["Республика Беларусь","СисАвТран","Сергей Лелеш +375 29 237-13-77","#17becf",53.7,27.6]
-];
-
-var ALIAS={
-"Ленинградская обл.":["Leningrad","Ленинградская"],
-"Псковская обл.":["Pskov","Псковская"],
-"Вологодская обл.":["Vologda","Вологодская"],
-"Архангельская обл.":["Arkhangelsk","Архангельская"],
-"Московская обл.":["Moscow","Московская"],
-"Нижегородская обл.":["Nizhny Novgorod","Нижегородская"],
-"Оренбургская обл.":["Orenburg","Оренбургская"],
-"Омская обл.":["Omsk","Омская"],
-"Забайкальский край":["Zabaykalsky","Забайкальский"],
-"Новосибирская обл.":["Novosibirsk","Новосибирская"],
-"Краснодарский край":["Krasnodar","Краснодарский"],
-"Ставропольский край":["Stavropol","Ставропольский"],
-"Брянская обл.":["Bryansk","Брянская"],
-"Воронежская обл.":["Voronezh","Воронежская"],
-"Челябинская обл.":["Chelyabinsk","Челябинская"],
-"Тюменская обл.":["Tyumen","Тюменская"],
-"Свердловская обл.":["Sverdlovsk","Свердловская"],
-"Ямало-Ненецкий АО":["Yamalo-Nenets","Ямало-Ненецкий"],
-"Пермский край":["Perm","Пермский"],
-"Хабаровский край":["Khabarovsk","Хабаровский"],
-"Башкортостан":["Bashkortostan","Башкортостан"],
-"Самарская обл.":["Samara","Самарская"],
-"Ульяновская обл.":["Ulyanovsk","Ульяновская"],
-"Кемеровская обл.":["Kemerovo","Кемеровская"],
-"Республика Алтай":["Altai Republic","Республика Алтай"],
-"Иркутская обл.":["Irkutsk","Иркутская"],
-"Хакасия":["Khakassia","Хакасия"],
-"Красноярский край":["Krasnoyarsk","Красноярский"],
-"Смоленская обл.":["Smolensk","Смоленская"],
-"Тульская обл.":["Tula","Тульская"],
-"Орловская обл.":["Oryol","Орловская"],
-"Липецкая обл.":["Lipetsk","Липецкая"]
-};
-
-var myMap=new ymaps.Map("map",{center:[62,85],zoom:2.6,controls:['zoomControl','typeSelector','fullscreenControl']});
-
-// ====== Точки и легенда (показываем всегда) ======
-var seen={}, legendDiv=document.getElementById("legend");
-DATA.forEach(function(d){
-var n=d[0],pr=d[1],ph=d[2],c=d[3],lat=d[4],lon=d[5];
-var pm=new ymaps.Placemark([lat,lon],{hintContent:n,balloonContentBody:'<b>'+n+'</b><br>'+pr+'<br>'+ph},{preset:'islands#circleDotIcon',iconColor:c});
-myMap.geoObjects.add(pm);
-if(!seen[pr]){seen[pr]=1;legendDiv.innerHTML+='<div class="li"><div class="lc" style="background:'+c+'"></div>'+pr+'</div>';}
+Object.keys(rd).forEach(function(n){
+var r=rd[n], coords=r.coords, native=r.native;
+// GeoJSON: [lon,lat] -> [lat,lon]; native: уже [lat,lon]
+function fix(ring){return native?ring:ring.map(function(p){return[p[1],p[0]]});}
+function add(rings){
+try{myMap.geoObjects.add(new ymaps.Polygon(rings,{hintContent:n},{fillColor:r.color,fillOpacity:0.40,strokeColor:r.color,strokeWidth:2,strokeOpacity:0.85}));}
+catch(e){console.log(n,e);}
+}
+if(r.type==='Polygon'){add(coords.map(fix));}
+else if(r.type==='MultiPolygon'){coords.forEach(function(p){add(p.map(fix));});}
 });
 
-// ====== Границы: грузим GeoJSON из интернета ======
-console.log("Загружаю границы регионов...");
-fetch("https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/russia.geojson")
-.then(function(r){return r.json();})
-.then(function(geojson){
-console.log("GeoJSON загружен, features:",geojson.features.length);
-var found=0;
-geojson.features.forEach(function(f){
-var fname=f.properties.name||"";
-var geom=f.geometry;
-var coords=geom.coordinates;
-if(!coords)return;
-
-// Ищем совпадение
-var match=null;
-for(var k in ALIAS){
-var arr=ALIAS[k];
-for(var i=0;i<arr.length;i++){
-if(fname.toLowerCase().indexOf(arr[i].toLowerCase())!==-1){match=k;break;}
-}
-if(match)break;
-}
-if(!match)return;
-
-// Ищем цвет для этого региона
-var color="#7fb3e8";
-for(var j=0;j<DATA.length;j++){if(DATA[j][0]===match){color=DATA[j][3];break;}}
-
-// Конвертируем [lon,lat] -> [lat,lon] и рисуем
-function fixRing(ring){return ring.map(function(p){return[p[1],p[0]];});}
-function addPoly(rings){
-try{
-myMap.geoObjects.add(new ymaps.Polygon(rings,{hintContent:match},{fillColor:color,fillOpacity:0.40,strokeColor:color,strokeWidth:2,strokeOpacity:0.85}));
-found++;
-}catch(e){console.log(match,e);}
-}
-
-if(geom.type==="Polygon"){addPoly(coords.map(fixRing));}
-else if(geom.type==="MultiPolygon"){coords.forEach(function(p){addPoly(p.map(fixRing));});}
+var p=''' + json_points + ''';
+p.forEach(function(x){
+myMap.geoObjects.add(new ymaps.Placemark([x.lat,x.lon],{hintContent:x.name,balloonContentBody:'<b>'+x.name+'</b><br>'+x.partner+'<br>'+x.phone},{preset:'islands#circleDotIcon',iconColor:x.color}));
 });
-console.log("Нарисовано регионов:",found);
-}).catch(function(e){console.log("Ошибка загрузки GeoJSON:",e);});
-
-// ====== Беларусь + ЛНР (ручные) ======
-var BEL=[[55.8,23.17],[56.02,27.0],[55.91,28.0],[55.62,30.65],[55.44,30.8],[54.86,31.05],[54.3,30.5],[53.52,31.15],[52.74,31.8],[51.95,31.5],[51.5,30.5],[51.24,29.5],[51.35,27.2],[51.63,24.2],[52.26,23.18],[53.9,23.17],[55.8,23.17]];
-var LNR=[[50.18,38.05],[50.21,39.8],[50.06,40.33],[49.59,40.2],[49.16,40.06],[48.73,39.72],[48.24,39.5],[47.82,38.83],[47.82,38.2],[48.95,38.05],[50.18,38.05]];
-myMap.geoObjects.add(new ymaps.Polygon([BEL],{hintContent:"Республика Беларусь"},{fillColor:"#17becf",fillOpacity:0.40,strokeColor:"#17becf",strokeWidth:2,strokeOpacity:0.85}));
-myMap.geoObjects.add(new ymaps.Polygon([LNR],{hintContent:"ЛНР (Луганск)"},{fillColor:"#ff7f0e",fillOpacity:0.40,strokeColor:"#ff7f0e",strokeWidth:2,strokeOpacity:0.85}));
 
 });
-</script>
-</body>
-</html>
+</script></body></html>'''
+
+out = "karta_smt.html"
+with open(out, "w", encoding="utf-8") as f:
+    f.write(HTML)
+print(f"OK: {os.path.abspath(out)} ({os.path.getsize(out):,} байт)")
+webbrowser.open("file:///" + os.path.abspath(out).replace("\\", "/"))
